@@ -34,13 +34,13 @@ func (cp *cachepartition) view(fn func(*bolt.Tx) error) error {
 
 func (cp *cachepartition) get(bucket, key []byte) (v []byte, err error) {
 	err = cp.view(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
+		b := tx.Bucket(bucket)
 		if b == nil {
-			return fmt.Errorf("Bucket %v not found", "MyBucket")
+			return fmt.Errorf("Bucket %s not found", bucket)
 		}
 		v = b.Get(key)
 		if v == nil {
-			return fmt.Errorf("Key %v not found in bucket %v", "answer", "MyBucket")
+			return fmt.Errorf("Key %v not found in bucket %v", key, bucket)
 		}
 		return nil
 	})

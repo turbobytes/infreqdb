@@ -17,8 +17,7 @@ type DB struct {
 	bucket *s3.Bucket
 	prefix string
 	//ttlFunc TTLMethod
-	cache  gcache.Cache
-	tmpdir string
+	cache gcache.Cache
 }
 
 func getfname(key interface{}) (string, error) {
@@ -51,6 +50,7 @@ func New(bucket *s3.Bucket, prefix string, len int) (*DB, error) {
 			return data, nil
 		}).
 		EvictedFunc(func(k interface{}, v interface{}) {
+			//Close the cachepartition when evicting
 			part, ok := v.(*cachepartition)
 			if ok {
 				log.Println("closing", k, part.fname)
@@ -71,7 +71,7 @@ func (db *DB) Expire(partid string) {
 	db.cache.Remove(partid)
 }
 
-//Silently fails... no evictions on failure
+//Silently fails... no evictions on network or parsing failure
 func (db *DB) gets3lastmod(key string) time.Time {
 	resp, err := db.bucket.Head(key, map[string][]string{})
 	if err != nil {
@@ -107,7 +107,7 @@ func (db *DB) CheckExpiry() int {
 	return count
 }
 
-//Get gets key from db
+//Get gets single key from db
 func (db *DB) Get(partid string, bucket, key []byte) ([]byte, error) {
 	data, err := db.cache.Get(partid)
 	if err != nil {
@@ -135,6 +135,9 @@ func (db *DB) View(partid string, fn func(*bolt.Tx) error) error {
 }
 
 //SetPart uploads the partition to S3 and expires local cache
+//fname is the path to an uncompressed boltdb file
+//Cache for this partition is invalidated. If running on a cluster you need to
+// propagate this and Expire(partid) somehow
 func (db *DB) SetPart(partid, fname string) error {
 	err := upLoadCachePartition(db.prefix+partid, fname, db.bucket)
 	db.Expire(partid)
