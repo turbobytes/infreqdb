@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bluele/gcache"
+	"github.com/boltdb/bolt"
 	"github.com/goamz/goamz/s3"
 )
 
@@ -41,12 +42,20 @@ func New(bucket *s3.Bucket, prefix string, len int) (*DB, error) {
 			if err != nil {
 				return nil, err
 			}
-			//TODO: Load data from S3 partition
-			data, err := loadPartition(prefix+partition, bucket)
+			//Load data from S3 partition
+			log.Println("loading", key, prefix+partition)
+			data, err := newcachepartition(prefix+partition, bucket)
 			if err != nil {
 				return nil, err
 			}
 			return data, nil
+		}).
+		EvictedFunc(func(k interface{}, v interface{}) {
+			part, ok := v.(*cachepartition)
+			if ok {
+				log.Println("closing", k, part.fname)
+				part.close()
+			}
 		}).
 		Build()
 	return &DB{
@@ -86,7 +95,7 @@ func (db *DB) CheckExpiry() int {
 	for k, v := range db.cache.GetALL() {
 		partid, ok := k.(string)
 		if ok {
-			part, ok := v.(partition)
+			part, ok := v.(*cachepartition)
 			if ok {
 				if part.lastModified.Before(db.gets3lastmod(db.prefix + partid)) {
 					count++
@@ -99,30 +108,42 @@ func (db *DB) CheckExpiry() int {
 }
 
 //Get gets key from db
-func (db *DB) Get(partid, key string) (interface{}, error) {
+func (db *DB) Get(partid string, bucket, key []byte) ([]byte, error) {
 	data, err := db.cache.Get(partid)
 	if err != nil {
 		return nil, err
 	}
-	part, ok := data.(partition)
+	cp, ok := data.(*cachepartition)
 	if !ok {
 		return nil, fmt.Errorf("Returned object is incorrect type")
 	}
-	item, ok := part.Items[key]
-	if !ok {
-		return nil, fmt.Errorf("Key %v not found in partion %v", key, partid)
+	return cp.get(bucket, key)
+}
+
+//View inside individual bolt db
+//See https://godoc.org/github.com/boltdb/bolt#DB.View for more info
+func (db *DB) View(partid string, fn func(*bolt.Tx) error) error {
+	data, err := db.cache.Get(partid)
+	if err != nil {
+		return err
 	}
-	return item, nil
+	cp, ok := data.(*cachepartition)
+	if !ok {
+		return fmt.Errorf("Returned object is incorrect type")
+	}
+	return cp.view(fn)
 }
 
 //SetPart uploads the partition to S3 and expires local cache
-func (db *DB) SetPart(partid string, data map[string]interface{}) error {
-	err := upLoadPartition(db.prefix+partid, data, db.bucket)
+func (db *DB) SetPart(partid, fname string) error {
+	err := upLoadCachePartition(db.prefix+partid, fname, db.bucket)
 	db.Expire(partid)
 	return err
 }
 
 //Close closes the db and deletes all local database fragments
 func (db *DB) Close() {
-	//db.cache.closeall()
+	for _, k := range db.cache.Keys() {
+		db.cache.Remove(k)
+	}
 }
