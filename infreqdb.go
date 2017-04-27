@@ -32,7 +32,7 @@ func getfname(key interface{}) (string, error) {
 }
 
 //New creates a new InfreqDB instance
-//len is number of partitions to hold in memory.. use wisely...
+//len is number of partitions to hold on disk.. use wisely...
 func New(bucket *s3.Bucket, prefix string, len int) (*DB, error) {
 	gc := gcache.New(len).
 		LRU().
@@ -66,7 +66,7 @@ func New(bucket *s3.Bucket, prefix string, len int) (*DB, error) {
 	}, nil
 }
 
-//Expire evicts the partition from memory
+//Expire evicts the partition from disk
 func (db *DB) Expire(partid string) {
 	db.cache.Remove(partid)
 }

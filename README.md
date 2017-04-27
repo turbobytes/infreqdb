@@ -1,3 +1,5 @@
+[![GoDoc](https://godoc.org/github.com/turbobytes/infreqdb?status.svg)](https://godoc.org/github.com/turbobytes/infreqdb)
+
 # infreqdb
 S3 backed key/value database for infrequent read access
 
