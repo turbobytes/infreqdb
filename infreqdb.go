@@ -80,8 +80,13 @@ func (db *DB) gets3lastmod(key string) time.Time {
 	}
 	lmod, err := http.ParseTime(resp.Header.Get("last-modified"))
 	if err != nil {
-		log.Println(err)
-		return time.Unix(1, 0)
+		//s3test has issues, lets workaround it.
+		//https://github.com/goamz/goamz/issues/137
+		lmod, err = time.Parse("Mon, 2 Jan 2006 15:04:05 GMT", resp.Header.Get("last-modified"))
+		if err != nil {
+			log.Println(err)
+			return time.Unix(1, 0)
+		}
 	}
 	return lmod
 }

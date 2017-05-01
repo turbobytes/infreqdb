@@ -69,7 +69,12 @@ func newcachepartition(key string, bucket *s3.Bucket) (*cachepartition, error) {
 	//Populate last-modified from header
 	cp.lastModified, err = http.ParseTime(resp.Header.Get("last-modified"))
 	if err != nil {
-		return nil, err
+		//s3test has issues, lets workaround it.
+		//https://github.com/goamz/goamz/issues/137
+		cp.lastModified, err = time.Parse("Mon, 2 Jan 2006 15:04:05 GMT", resp.Header.Get("last-modified"))
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer resp.Body.Close()
 	//uncompress
