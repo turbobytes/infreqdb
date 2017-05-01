@@ -28,6 +28,15 @@ For comparison.
 - 1500 GB EBS(gp2) costs $150/month
 - 300 GB on S3 costs $6.9/month + extra for requests, no bandwidth charges if running in EC2.
 
+There are additional charges for requests when using S3. If the data/partition structure is not optimized, it can end up costing a lot.
+
+$0.005 per 1,000 requests for PUT, COPY, POST, or LIST Requests
+$0.004 per 10,000 requests for GET and all other Requests
+
+In my use-case, I expect to do a maximum of 100 PUTs per hour = 100 * 24 * 31 = 74400/month costing $0.372/month
+
+GET/HEAD should cost even less, depends on cache HIT ratio I can achieve.
+
 ## Usage
 
 infreqdb is a library, not a database server.
