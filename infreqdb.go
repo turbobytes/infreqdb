@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/bluele/gcache"
@@ -24,9 +23,6 @@ func getfname(key interface{}) (string, error) {
 	partition, ok := key.(string)
 	if !ok {
 		return "", fmt.Errorf("Key must be a string")
-	}
-	if strings.Contains(partition, "/") {
-		return "", fmt.Errorf("Key must not contain /")
 	}
 	return partition, nil
 }

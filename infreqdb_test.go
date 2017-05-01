@@ -58,11 +58,6 @@ func TestDB(t *testing.T) {
 		t.Error(err)
 	}
 	defer db.Close()
-	//Test invalid partid
-	_, err = db.Get("what/ever", []byte("foo"), []byte("bar"))
-	if err == nil {
-		t.Error("Should have error, got none")
-	}
 	//Test err key does not exist
 	_, err = db.Get("whatever", []byte("foo"), []byte("bar"))
 	if err == nil {
