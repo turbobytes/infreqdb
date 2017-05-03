@@ -53,7 +53,9 @@ func (cp *cachepartition) close() error {
 	//Lock forever... no more reads here...
 	//Lock waits for all readers to finish...
 	cp.Lock()
-	defer os.Remove(cp.fname)
+	if cp.fname != "" {
+		defer os.Remove(cp.fname)
+	}
 	if cp.db != nil {
 		return cp.db.Close()
 	}
