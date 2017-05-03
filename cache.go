@@ -64,6 +64,7 @@ func newcachepartition(key string, bucket *s3.Bucket) (*cachepartition, error) {
 	//Download file from s3
 	//GetResponse just to be able to read Last-Modified
 	resp, err := bucket.GetResponse(key)
+	//TODO: Handle notfound errors differently
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func newcachepartition(key string, bucket *s3.Bucket) (*cachepartition, error) {
 		return nil, err
 	}
 	//TODO: Until we can detect it.
-	cp.mutable = true
+	cp.mutable = resp.Header.Get("x-amz-meta-mutable") != ""
 	return cp, nil
 }
 
@@ -120,5 +121,9 @@ func upLoadCachePartition(key, fname string, bucket *s3.Bucket, mutable bool) er
 		return err
 	}
 	gzrw.Close()
-	return bucket.Put(key, network.Bytes(), "TODO", "", s3.Options{})
+	hdr := make(http.Header)
+	if mutable {
+		hdr.Set("x-amz-meta-mutable", "yes")
+	}
+	return bucket.PutHeader(key, network.Bytes(), hdr, "")
 }
