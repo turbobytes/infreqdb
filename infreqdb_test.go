@@ -59,9 +59,12 @@ func TestDB(t *testing.T) {
 	}
 	defer db.Close()
 	//Test err key does not exist
-	_, err = db.Get("whatever", []byte("foo"), []byte("bar"))
-	if err == nil {
-		t.Error("Should have error, got none")
+	vnil, err := db.Get("whatever", []byte("foo"), []byte("bar"))
+	if err != nil {
+		t.Error(err)
+	}
+	if vnil != nil {
+		t.Errorf("Val should be nill, for %v", vnil)
 	}
 	//Populate a local file...
 	tf := gettmpfile(t)

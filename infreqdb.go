@@ -1,7 +1,6 @@
 package infreqdb
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -9,6 +8,7 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/boltdb/bolt"
 	"github.com/goamz/goamz/s3"
+	"github.com/pkg/errors"
 )
 
 //DB is an instance of InfreqDB
@@ -22,7 +22,7 @@ type DB struct {
 func getfname(key interface{}) (string, error) {
 	partition, ok := key.(string)
 	if !ok {
-		return "", fmt.Errorf("Key must be a string")
+		return "", ErrKeyNotString
 	}
 	return partition, nil
 }
@@ -117,7 +117,7 @@ func (db *DB) Get(partid string, bucket, key []byte) ([]byte, error) {
 	}
 	cp, ok := data.(*cachepartition)
 	if !ok {
-		return nil, fmt.Errorf("Returned object is incorrect type")
+		return nil, ErrInvalidObject
 	}
 	return cp.get(bucket, key)
 }
@@ -127,11 +127,16 @@ func (db *DB) Get(partid string, bucket, key []byte) ([]byte, error) {
 func (db *DB) View(partid string, fn func(*bolt.Tx) error) error {
 	data, err := db.cache.Get(partid)
 	if err != nil {
-		return err
+		if IsNotFound(err) {
+			//Not found errors should not propagate error.
+			//Means there is no data for this partition...
+			return nil
+		}
+		return errors.Wrap(err, "View")
 	}
 	cp, ok := data.(*cachepartition)
 	if !ok {
-		return fmt.Errorf("Returned object is incorrect type")
+		return ErrInvalidObject
 	}
 	return cp.view(fn)
 }
@@ -144,7 +149,7 @@ func (db *DB) View(partid string, fn func(*bolt.Tx) error) error {
 func (db *DB) SetPart(partid, fname string, mutable bool) error {
 	err := upLoadCachePartition(db.prefix+partid, fname, db.bucket, mutable)
 	db.Expire(partid)
-	return err
+	return errors.Wrap(err, "SetPart")
 }
 
 //Close closes the db and deletes all local database fragments

@@ -25,11 +25,12 @@ type cachepartition struct {
 
 func (cp *cachepartition) view(fn func(*bolt.Tx) error) error {
 	//Locking... so we when we close bolt.DB there are no reads inflight
+	if cp.db == nil {
+		//cp would be nil if the partition did not exist
+		return nil
+	}
 	cp.RLock()
 	defer cp.RUnlock()
-	if cp.db == nil {
-		return fmt.Errorf("DB is nil")
-	}
 	return cp.db.View(fn)
 }
 
@@ -66,6 +67,11 @@ func newcachepartition(key string, bucket *s3.Bucket) (*cachepartition, error) {
 	resp, err := bucket.GetResponse(key)
 	//TODO: Handle notfound errors differently
 	if err != nil {
+		if IsNotFound(err) {
+			cp.mutable = true
+			cp.lastModified = time.Unix(2, 2)
+			return cp, nil
+		}
 		return nil, err
 	}
 	//Populate last-modified from header
