@@ -86,7 +86,7 @@ func TestDB(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = db.SetPart("whatever", tf)
+	err = db.SetPart("whatever", tf, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -128,7 +128,7 @@ func TestDB(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = db.SetPart("whatever", tf)
+	err = db.SetPart("whatever", tf, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -177,7 +177,7 @@ func TestDB(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = upLoadCachePartition("/foo/whatever", tf, bucket)
+	err = upLoadCachePartition("/foo/whatever", tf, bucket, true)
 	if err != nil {
 		t.Error(err)
 	}

@@ -98,7 +98,8 @@ func (db *DB) CheckExpiry() int {
 		if ok {
 			part, ok := v.(*cachepartition)
 			if ok {
-				if part.lastModified.Before(db.gets3lastmod(db.prefix + partid)) {
+				//Only check mutable partitions to limit number of HEAD requests
+				if part.mutable && part.lastModified.Before(db.gets3lastmod(db.prefix+partid)) {
 					count++
 					db.Expire(partid)
 				}
@@ -138,9 +139,10 @@ func (db *DB) View(partid string, fn func(*bolt.Tx) error) error {
 //SetPart uploads the partition to S3 and expires local cache
 //fname is the path to an uncompressed boltdb file
 //Cache for this partition is invalidated. If running on a cluster you need to
-// propagate this and Expire(partid) somehow
-func (db *DB) SetPart(partid, fname string) error {
-	err := upLoadCachePartition(db.prefix+partid, fname, db.bucket)
+// propagate this and Expire(partid) somehow.
+// Set mutable to true in case you expect changes to this partition
+func (db *DB) SetPart(partid, fname string, mutable bool) error {
+	err := upLoadCachePartition(db.prefix+partid, fname, db.bucket, mutable)
 	db.Expire(partid)
 	return err
 }

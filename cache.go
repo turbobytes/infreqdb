@@ -20,6 +20,7 @@ type cachepartition struct {
 	db           *bolt.DB
 	fname        string
 	lastModified time.Time
+	mutable      bool
 }
 
 func (cp *cachepartition) view(fn func(*bolt.Tx) error) error {
@@ -99,10 +100,12 @@ func newcachepartition(key string, bucket *s3.Bucket) (*cachepartition, error) {
 		os.Remove(cp.fname)
 		return nil, err
 	}
+	//TODO: Until we can detect it.
+	cp.mutable = true
 	return cp, nil
 }
 
-func upLoadCachePartition(key, fname string, bucket *s3.Bucket) error {
+func upLoadCachePartition(key, fname string, bucket *s3.Bucket, mutable bool) error {
 	var network bytes.Buffer
 	//compress..
 	//Yikes in memory

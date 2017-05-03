@@ -52,3 +52,5 @@ Example: [toyexample](examples/toyexample).
 ## Disclaimer
 
 I have not yet used infreqdb for anything large, just the [toyexample](examples/toyexample/main.go)
+
+Backwards compatibility is not guaranteed. I am making changes to the API as I start using this library for real-world application.

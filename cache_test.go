@@ -37,7 +37,7 @@ func TestCache(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = upLoadCachePartition(path, tf, bucket)
+	err = upLoadCachePartition(path, tf, bucket, true)
 	if err != nil {
 		t.Error(err)
 	}
