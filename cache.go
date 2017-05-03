@@ -67,7 +67,7 @@ func newcachepartition(key string, bucket *s3.Bucket) (*cachepartition, error) {
 	//Download file from s3
 	//GetResponse just to be able to read Last-Modified
 	resp, err := bucket.GetResponse(key)
-	//TODO: Handle notfound errors differently
+	//Handle notfound errors differently
 	if err != nil {
 		if IsNotFound(err) {
 			cp.mutable = true

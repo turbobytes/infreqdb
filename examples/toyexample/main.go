@@ -137,7 +137,7 @@ func generatedb(t time.Time) {
 		log.Fatal(err)
 	}
 	log.Println("Uploading")
-	db.SetPart(partid, fname)
+	db.SetPart(partid, fname, true)
 }
 
 func prefildb() {
