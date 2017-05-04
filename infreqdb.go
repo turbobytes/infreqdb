@@ -124,21 +124,23 @@ func (db *DB) Get(partid string, bucket, key []byte) ([]byte, error) {
 
 //View inside individual bolt db
 //See https://godoc.org/github.com/boltdb/bolt#DB.View for more info
-func (db *DB) View(partid string, fn func(*bolt.Tx) error) error {
+//Second return argument indicates if the partition is mutable.
+//Helpful hint for downstream caching.
+func (db *DB) View(partid string, fn func(*bolt.Tx) error) (bool, error) {
 	data, err := db.cache.Get(partid)
 	if err != nil {
 		if IsNotFound(err) {
 			//Not found errors should not propagate error.
 			//Means there is no data for this partition...
-			return nil
+			return true, nil
 		}
-		return errors.Wrap(err, "View")
+		return true, errors.Wrap(err, "View")
 	}
 	cp, ok := data.(*cachepartition)
 	if !ok {
-		return ErrInvalidObject
+		return false, ErrInvalidObject
 	}
-	return cp.view(fn)
+	return cp.mutable, cp.view(fn)
 }
 
 //SetPart uploads the partition to S3 and expires local cache
