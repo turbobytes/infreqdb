@@ -21,12 +21,12 @@ The source of truth of all data is a bucket in S3. The data is split into multip
 
 I have a PostgreSQL database(mostly time series) thats consuming about 500GB (and growing) of storage. The data is output of batch processing scripts, which process an hour worth of data each time and merge it in the database. The queries are mostly for fresh data.
 
-500GB of might take 1500 GB disk storage - 2 replicas for HA and 250GB extra per replica to accommodate growth. Whereas the same data compressed might be 300GB (I haven't done an export yet) on S3. S3 is already replicated.
+500GB of might take 1500 GB disk storage - 2 replicas for HA and 250GB extra per replica to accommodate growth. Whereas the same data compressed ~~might be 300GB (I haven't done an export yet) on S3~~ 30GB on S3. S3 is already replicated.
 
 For comparison.
 
 - 1500 GB EBS(gp2) costs $150/month
-- 300 GB on S3 costs $6.9/month + extra for requests, no bandwidth charges if running in EC2.
+- 30 GB on S3 costs $0.69/month + extra for requests, no bandwidth charges if running in EC2.
 
 There are additional charges for requests when using S3. If the data/partition structure is not optimized, it can end up costing a lot.
 
