@@ -37,6 +37,12 @@ In my use-case, I expect to do a maximum of 100 PUTs per hour = 100 * 24 * 31 = 
 
 GET/HEAD should cost even less, depends on cache HIT ratio I can achieve.
 
+infreqdb makes use of :-
+
+1. PUT to store partitions.
+2. GET to fetch partitions.
+3. HEAD to check if the cached partition is the latest one. It does a HEAD request for each mutable partition.
+
 ## Usage
 
 infreqdb is a library, not a database server.
@@ -54,3 +60,5 @@ Example: [toyexample](examples/toyexample).
 I have not yet used infreqdb for anything large, just the [toyexample](examples/toyexample/main.go)
 
 Backwards compatibility is not guaranteed. I am making changes to the API as I start using this library for real-world application.
+
+Once I settle on few things, I will make the object store pluggable to allow user-implementation of any object store they wish to use.
