@@ -3,6 +3,8 @@
 # infreqdb
 S3 backed key/value database for infrequent read access
 
+Access to hot data might be very frequent, but access to majority of data is rare.
+
 ## Use-Cases
 
 infreqdb might be useful if :-
@@ -11,7 +13,9 @@ infreqdb might be useful if :-
 2. You mostly do bulk updates.
 3. Most of the data is cold, i.e. only a small subset of data is typically queried.
 4. You are able to partition your data in a way such that hot and cold objects live on different partitions.
-5. Your data can fit in key/value model
+5. Your data can fit in key/value model.
+6. You don't mind occasional slow responses.
+7. You can tolerate eventual consistency.
 
 ## Architecture
 

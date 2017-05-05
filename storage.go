@@ -68,6 +68,7 @@ func (s3s *S3Storage) Get(part string) (fname string, found, mutable bool, lastm
 		return
 	}
 	defer gzrd.Close()
+	//The location of the TempFile is totally up to the Storage implimentation
 	tmpfile, err := ioutil.TempFile("", "infreqdb-")
 	if err != nil {
 		return
