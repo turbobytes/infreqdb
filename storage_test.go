@@ -11,7 +11,7 @@ func TestS3Storage(t *testing.T) {
 		t.Error(err)
 	}
 	var storage Storage
-	storage = NewS3Storage(bucket, "/") //should be compile fail if interface is not implimented
+	storage = NewS3Storage(bucket, "/") //should be compile fail if interface is not implemented
 	//Get 404
 	fname, found, mutable, lastmod, err := storage.Get("foo")
 	if err != nil {

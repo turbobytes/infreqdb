@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/turbobytes/infreqdb?status.svg)](https://godoc.org/github.com/turbobytes/infreqdb) [![Build Status](https://travis-ci.org/turbobytes/infreqdb.svg?branch=master)](https://travis-ci.org/turbobytes/infreqdb)
+[![GoDoc](https://godoc.org/github.com/turbobytes/infreqdb?status.svg)](https://godoc.org/github.com/turbobytes/infreqdb) [![Build Status](https://travis-ci.org/turbobytes/infreqdb.svg?branch=master)](https://travis-ci.org/turbobytes/infreqdb) [![Go Report Card](https://goreportcard.com/badge/github.com/turbobytes/infreqdb)](https://goreportcard.com/report/github.com/turbobytes/infreqdb)
 
 # infreqdb
 S3 backed key/value database for infrequent read access

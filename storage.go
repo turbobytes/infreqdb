@@ -25,7 +25,7 @@ type Storage interface {
 	GetLastMod(part string) time.Time
 }
 
-//S3Storage impliments interface to access AWS S3.
+//S3Storage implements interface to access AWS S3.
 //Uses gzip for compression
 type S3Storage struct {
 	bucket *s3.Bucket
@@ -42,7 +42,7 @@ func (s3s *S3Storage) key(part string) string {
 	return s3s.prefix + part
 }
 
-//Get a partition file from S3 store into local file, supress not found error
+//Get a partition file from S3 store into local file, suppress not found error
 func (s3s *S3Storage) Get(part string) (fname string, found, mutable bool, lastmod time.Time, err error) {
 	//Access s3
 	resp, err := s3s.bucket.GetResponse(s3s.key(part))
@@ -68,7 +68,7 @@ func (s3s *S3Storage) Get(part string) (fname string, found, mutable bool, lastm
 		return
 	}
 	defer gzrd.Close()
-	//The location of the TempFile is totally up to the Storage implimentation
+	//The location of the TempFile is totally up to the Storage implementation
 	tmpfile, err := ioutil.TempFile("", "infreqdb-")
 	if err != nil {
 		return
