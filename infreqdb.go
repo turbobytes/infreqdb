@@ -2,7 +2,6 @@ package infreqdb
 
 import (
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/bluele/gcache"
@@ -13,10 +12,9 @@ import (
 
 //DB is an instance of InfreqDB
 type DB struct {
-	bucket *s3.Bucket
-	prefix string
 	//ttlFunc TTLMethod
-	cache gcache.Cache
+	cache   gcache.Cache
+	storage Storage
 }
 
 func getfname(key interface{}) (string, error) {
@@ -29,7 +27,13 @@ func getfname(key interface{}) (string, error) {
 
 //New creates a new InfreqDB instance
 //len is number of partitions to hold on disk.. use wisely...
+//Better to use NewWithStorage() instead. New() will remain for backwards compatibility
 func New(bucket *s3.Bucket, prefix string, len int) (*DB, error) {
+	return NewWithStorage(&S3Storage{bucket, prefix}, len)
+}
+
+//NewWithStorage creates new DB with user provided storage
+func NewWithStorage(storage Storage, len int) (*DB, error) {
 	gc := gcache.New(len).
 		LRU().
 		LoaderFunc(func(key interface{}) (interface{}, error) {
@@ -38,8 +42,8 @@ func New(bucket *s3.Bucket, prefix string, len int) (*DB, error) {
 				return nil, err
 			}
 			//Load data from S3 partition
-			log.Println("loading", key, prefix+partition)
-			data, err := newcachepartition(prefix+partition, bucket)
+			log.Println("loading", key, partition)
+			data, err := newcachepartition(partition, storage)
 			if err != nil {
 				return nil, err
 			}
@@ -55,10 +59,8 @@ func New(bucket *s3.Bucket, prefix string, len int) (*DB, error) {
 		}).
 		Build()
 	return &DB{
-		bucket: bucket,
-		prefix: prefix,
-		//ttlFunc: ttlFunc,
-		cache: gc,
+		cache:   gc,
+		storage: storage,
 	}, nil
 }
 
@@ -68,23 +70,8 @@ func (db *DB) Expire(partid string) {
 }
 
 //Silently fails... no evictions on network or parsing failure
-func (db *DB) gets3lastmod(key string) time.Time {
-	resp, err := db.bucket.Head(key, map[string][]string{})
-	if err != nil {
-		log.Println(err)
-		return time.Unix(1, 0)
-	}
-	lmod, err := http.ParseTime(resp.Header.Get("last-modified"))
-	if err != nil {
-		//s3test has issues, lets workaround it.
-		//https://github.com/goamz/goamz/issues/137
-		lmod, err = time.Parse("Mon, 2 Jan 2006 15:04:05 GMT", resp.Header.Get("last-modified"))
-		if err != nil {
-			log.Println(err)
-			return time.Unix(1, 0)
-		}
-	}
-	return lmod
+func (db *DB) gets3lastmod(partid string) time.Time {
+	return db.storage.GetLastMod(partid)
 }
 
 //CheckExpiry expires items that have changed upstream
@@ -99,7 +86,7 @@ func (db *DB) CheckExpiry() int {
 			part, ok := v.(*cachepartition)
 			if ok {
 				//Only check mutable partitions to limit number of HEAD requests
-				if part.mutable && part.lastModified.Before(db.gets3lastmod(db.prefix+partid)) {
+				if part.mutable && part.lastModified.Before(db.gets3lastmod(partid)) {
 					count++
 					db.Expire(partid)
 				}
@@ -149,7 +136,7 @@ func (db *DB) View(partid string, fn func(*bolt.Tx) error) (bool, error) {
 // propagate this and Expire(partid) somehow.
 // Set mutable to true in case you expect changes to this partition
 func (db *DB) SetPart(partid, fname string, mutable bool) error {
-	err := upLoadCachePartition(db.prefix+partid, fname, db.bucket, mutable)
+	err := db.storage.Put(partid, fname, mutable)
 	db.Expire(partid)
 	return errors.Wrap(err, "SetPart")
 }

@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
@@ -62,55 +61,31 @@ func (cp *cachepartition) close() error {
 	return nil
 }
 
-func newcachepartition(key string, bucket *s3.Bucket) (*cachepartition, error) {
+func newcachepartition(part string, storage Storage) (*cachepartition, error) {
 	cp := &cachepartition{RWMutex: &sync.RWMutex{}}
-	//Download file from s3
-	//GetResponse just to be able to read Last-Modified
-	resp, err := bucket.GetResponse(key)
-	//Handle notfound errors differently
+	//Download file from storage
+	fname, found, mutable, lastmod, err := storage.Get(part)
+
 	if err != nil {
-		if IsNotFound(err) {
-			cp.mutable = true
-			cp.lastModified = time.Unix(2, 2)
-			return cp, nil
-		}
 		return nil, err
 	}
+
+	//404
+	if !found {
+		cp.mutable = true
+		cp.lastModified = time.Unix(2, 2)
+		return cp, nil
+	}
+	//Ok we have a partition
 	//Populate last-modified from header
-	cp.lastModified, err = http.ParseTime(resp.Header.Get("last-modified"))
-	if err != nil {
-		//s3test has issues, lets workaround it.
-		//https://github.com/goamz/goamz/issues/137
-		cp.lastModified, err = time.Parse("Mon, 2 Jan 2006 15:04:05 GMT", resp.Header.Get("last-modified"))
-		if err != nil {
-			return nil, err
-		}
-	}
-	defer resp.Body.Close()
-	//uncompress
-	gzrd, err := gzip.NewReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer gzrd.Close()
-	tmpfile, err := ioutil.TempFile("", "infreqdb-")
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.Copy(tmpfile, gzrd)
-	cp.fname = tmpfile.Name()
-	tmpfile.Close()
-	if err != nil {
-		os.Remove(cp.fname)
-		return nil, err
-	}
+	cp.lastModified = lastmod
+	cp.fname = fname
 	cp.db, err = bolt.Open(cp.fname, os.ModeExclusive, nil)
 	if err != nil {
 		os.Remove(cp.fname)
 		return nil, err
 	}
-	//TODO: Until we can detect it.
-	cp.mutable = resp.Header.Get("x-amz-meta-mutable") != ""
+	cp.mutable = mutable
 	return cp, nil
 }
 

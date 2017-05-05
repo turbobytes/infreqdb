@@ -16,6 +16,7 @@ import (
 //Storage allows various operations against an object store.
 //Use any object/file store.
 //The Storage is responsible for [un]compression.
+//This might be a good place to hook in some sort of upstream cache layer.
 type Storage interface {
 	//Get retrieves a partition file from object store
 	Get(part string) (fname string, found, mutable bool, lastmod time.Time, err error)

@@ -42,7 +42,7 @@ func TestCache(t *testing.T) {
 		t.Error(err)
 	}
 	//Try to load same partition
-	cp, err := newcachepartition(path, bucket)
+	cp, err := newcachepartition(path, &S3Storage{bucket, ""})
 	if err != nil {
 		t.Error(err)
 	}
