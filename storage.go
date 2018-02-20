@@ -46,6 +46,7 @@ func (s3s *S3Storage) key(part string) string {
 //Get a partition file from S3 store into local file, suppress not found error
 func (s3s *S3Storage) Get(part string) (fname string, found, mutable bool, lastmod time.Time, err error) {
 	//Access s3
+	st := time.Now()
 	resp, err := s3s.bucket.GetResponse(s3s.key(part))
 	if err != nil {
 		if IsNotFound(err) {
@@ -63,6 +64,7 @@ func (s3s *S3Storage) Get(part string) (fname string, found, mutable bool, lastm
 	if err != nil {
 		return
 	}
+	req := time.Since(st)
 	defer resp.Body.Close()
 	gzrd, err := gzip.NewReader(resp.Body)
 	if err != nil {
@@ -78,6 +80,7 @@ func (s3s *S3Storage) Get(part string) (fname string, found, mutable bool, lastm
 	if err != nil {
 		return
 	}
+	gunzip := time.Since(st)
 	fname = tmpfile.Name()
 	tmpfile.Close()
 	if err != nil {
@@ -87,6 +90,7 @@ func (s3s *S3Storage) Get(part string) (fname string, found, mutable bool, lastm
 	//All is well... populate mutable and found
 	mutable = resp.Header.Get("x-amz-meta-mutable") != ""
 	found = true
+	log.Println("loadeds3 ", part, req, gunzip)
 	return
 }
 

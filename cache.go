@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"sync"
@@ -80,11 +81,15 @@ func newcachepartition(part string, storage Storage) (*cachepartition, error) {
 	//Populate last-modified from header
 	cp.lastModified = lastmod
 	cp.fname = fname
-	cp.db, err = bolt.Open(cp.fname, os.ModeExclusive, nil)
+	st := time.Now()
+	cp.db, err = bolt.Open(cp.fname, os.ModeExclusive, &bolt.Options{
+		ReadOnly: true,
+	})
 	if err != nil {
 		os.Remove(cp.fname)
 		return nil, err
 	}
+	log.Println("loadedbolt ", part, time.Since(st))
 	cp.mutable = mutable
 	return cp, nil
 }

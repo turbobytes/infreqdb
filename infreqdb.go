@@ -43,10 +43,12 @@ func NewWithStorage(storage Storage, len int) (*DB, error) {
 			}
 			//Load data from S3 partition
 			log.Println("loading", key, partition)
+			st := time.Now()
 			data, err := newcachepartition(partition, storage)
 			if err != nil {
 				return nil, err
 			}
+			log.Println("loaded", key, partition, time.Since(st))
 			return data, nil
 		}).
 		EvictedFunc(func(k interface{}, v interface{}) {
